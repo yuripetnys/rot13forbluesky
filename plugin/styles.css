@@ -1,4 +1,7 @@
-.rot13-encode-btn {
+/* Doubled class beats Bluesky's single-class atomic styles copied from the
+   emoji button; Chrome injects content-script CSS before page CSS, so equal
+   specificity would lose there. */
+button.rot13-encode-btn.rot13-encode-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -11,6 +14,6 @@
   color: rgb(16, 131, 254);
 }
 
-.rot13-encode-btn:hover {
+button.rot13-encode-btn.rot13-encode-btn:hover {
   background: rgba(16, 131, 254, 0.1);
 }
