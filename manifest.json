@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "Rot13 for Bluesky",
+  "version": "1.0.0",
+  "description": "Decode/encode ROT13 content directly on Bluesky.",
+  "content_scripts": [
+    {
+      "matches": ["https://bsky.app/*"],
+      "js": ["content.js"],
+      "css": ["styles.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["icon.svg"],
+      "matches": ["https://bsky.app/*"]
+    }
+  ],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "yuri.oliveira@gmail.com"
+    }
+  }
+}

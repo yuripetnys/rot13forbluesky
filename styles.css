@@ -1,0 +1,16 @@
+.rot13-encode-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 6px;
+  margin: 0 2px;
+  border-radius: 999px;
+  color: rgb(16, 131, 254);
+}
+
+.rot13-encode-btn:hover {
+  background: rgba(16, 131, 254, 0.1);
+}
