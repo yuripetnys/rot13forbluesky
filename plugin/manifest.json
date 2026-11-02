@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Rot13 for Bluesky",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Decode/encode ROT13 content directly on Bluesky.",
   "icons": {
     "128": "icon-128.png"
