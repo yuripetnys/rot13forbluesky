@@ -1,6 +1,58 @@
 (() => {
   "use strict";
 
+  const GENERIC_TLDS = new Set(
+    ("com net org edu gov mil int info biz name pro mobi aero coop app dev " +
+      "page blog xyz online site website tech store shop social news live " +
+      "space link cloud design art club wiki lol gay top fun icu vip work " +
+      "world life today email media digital network studio games video " +
+      "music photo photos pics wtf zone one moe ink rocks host systems " +
+      "software solutions agency company group global church university " +
+      "academy school bot ai").split(" ")
+  );
+  const HANDLE_RE =
+    /^([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$/;
+  const MENTION_RE = /(^|\s|\()(@)([a-zA-Z0-9.-]+)(\b)/g;
+  const URL_RE =
+    /(^|\s|\()((https?:\/\/\S+)|(([a-z][a-z0-9]*(\.[a-z0-9]+)+)\S*))/gim;
+  const TAG_RE =
+    /(^|\s)[#＃]((?!️)[^\s­⁠ ​‌‍⃢]*[^\d\s\p{P}­⁠ ​‌‍⃢]+[^\s­⁠ ​‌‍⃢]*)?/gu;
+
+  function isLinkableDomain(domain) {
+    const tld = domain.split(".").pop().toLowerCase();
+    return tld.length === 2 || GENERIC_TLDS.has(tld);
+  }
+
+  function linkRanges(text) {
+    const ranges = [];
+    let m;
+
+    for (MENTION_RE.lastIndex = 0; (m = MENTION_RE.exec(text)); ) {
+      if (!HANDLE_RE.test(m[3])) continue;
+      const start = m.index + m[1].length;
+      ranges.push([start, start + 1 + m[3].length]);
+    }
+
+    for (URL_RE.lastIndex = 0; (m = URL_RE.exec(text)); ) {
+      let uri = m[2];
+      if (!m[3] && !isLinkableDomain(m[5])) continue;
+      if (/[.,;:!?]$/.test(uri)) uri = uri.slice(0, -1);
+      if (uri.endsWith(")") && !uri.includes("(")) uri = uri.slice(0, -1);
+      const start = m.index + m[1].length;
+      ranges.push([start, start + uri.length]);
+    }
+
+    for (TAG_RE.lastIndex = 0; (m = TAG_RE.exec(text)); ) {
+      if (!m[2]) continue;
+      const tag = m[2].trim().replace(/\p{P}+$/gu, "");
+      if (!tag || tag.length > 64) continue;
+      const start = m.index + m[1].length;
+      ranges.push([start, start + 1 + tag.length]);
+    }
+
+    return ranges.sort((a, b) => a[0] - b[0]);
+  }
+
   function rot13(str) {
     return str.replace(/[a-zA-Z]/g, (c) => {
       const base = c <= "Z" ? 65 : 97;
@@ -8,7 +60,30 @@
     });
   }
 
+  function rot13SkippingLinks(text) {
+    let out = "";
+    let pos = 0;
+    for (const [start, end] of linkRanges(text)) {
+      if (end <= pos) continue;
+      out += rot13(text.slice(pos, Math.max(pos, start))) +
+        text.slice(Math.max(pos, start), end);
+      pos = end;
+    }
+    return out + rot13(text.slice(pos));
+  }
+
   const api = typeof browser !== "undefined" ? browser : chrome;
+
+  let ignoreLinks = true;
+  api.storage.sync.get({ ignoreLinks: true }).then((settings) => {
+    ignoreLinks = settings.ignoreLinks;
+  });
+  api.storage.onChanged.addListener((changes, area) => {
+    if (area === "sync" && changes.ignoreLinks) {
+      ignoreLinks = changes.ignoreLinks.newValue;
+    }
+  });
+
   let iconTemplate = null;
   fetch(api.runtime.getURL("icon.svg"))
     .then((r) => r.text())
@@ -99,6 +174,8 @@
     let n;
     while ((n = walker.nextNode())) nodes.push(n);
     nodes.forEach((t) => {
+      const link = t.parentElement && t.parentElement.closest("a");
+      if (ignoreLinks && link && target.contains(link)) return;
       if (t.textContent.trim()) t.textContent = rot13(t.textContent);
     });
   }
@@ -144,7 +221,7 @@
 
   function encodeEditor(editor) {
     const text = editor.innerText;
-    const encoded = rot13(text);
+    const encoded = ignoreLinks ? rot13SkippingLinks(text) : rot13(text);
 
     editor.focus();
     const sel = window.getSelection();

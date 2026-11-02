@@ -6,6 +6,14 @@
   "icons": {
     "128": "icon-128.png"
   },
+  "permissions": ["storage"],
+  "action": {
+    "default_title": "Rot13 for Bluesky",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "128": "icon-128.png"
+    }
+  },
   "content_scripts": [
     {
       "matches": ["https://bsky.app/*"],
